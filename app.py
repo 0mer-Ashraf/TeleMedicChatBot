@@ -1,8 +1,9 @@
 import streamlit as st
 from chat_screen import chat_screen
+from landing_page import landing_page
 
 # ----- Page Configuration -----
-st.set_page_config(page_title="TeleMedicine Chatbot" , page_icon=":hospital:")
+st.set_page_config(page_title="TeleMedicine Chatbot", page_icon=":hospital:", layout="wide")
 
 # ----- Custom CSS for Styling -----
 st.markdown(
@@ -31,7 +32,6 @@ st.markdown(
     }
     /* Button styling */
     .stButton > button {
-       
         color: white;
         padding: 10px 20px;
         border: none;
@@ -40,7 +40,7 @@ st.markdown(
         width: 100%;
     }
     .stButton > button:hover {
-
+        opacity: 0.9;
     }
     /* Title styling */
     .title {
@@ -64,12 +64,12 @@ USERS = {
     "admin": "admin",
 }
 
-
 # ----- Initialize Session State -----
-query_params = st.query_params
+if "page" not in st.session_state:
+    st.session_state.page = "landing"  # Default to landing page
 
 if "logged_in" not in st.session_state:
-    st.session_state.logged_in = query_params.get("logged_in", "False") == "True"
+    st.session_state.logged_in = False
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -78,25 +78,39 @@ if "chat_history" not in st.session_state:
 def login_screen():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<h1 style='text-align: center;'>Welcome to Tele Medicine</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>Welcome to TeleMedicine</h1>", unsafe_allow_html=True)
         
     st.markdown('<h4 class="subtitle">Sign In</h4>', unsafe_allow_html=True)
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     
-    if st.button("Go To Chat", type="primary"):
-        if username in USERS and USERS[username] == password:
-            st.session_state.logged_in = True
-            st.query_params["logged_in"] = "True"
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("Sign In", type="primary"):
+            if username in USERS and USERS[username] == password:
+                st.session_state.logged_in = True
+                st.session_state.page = "chat"
+                st.rerun()
+            else:
+                st.error("Invalid username or password. Please try again.")
+        
+        # Back button to return to landing page
+        if st.button("Back to Home"):
+            st.session_state.page = "landing"
             st.rerun()
-        else:
-            st.error("Invalid username or password. Please try again.")
 
 # ----- App Routing -----
-if not st.session_state.logged_in:
-    login_screen()
-else:
-    chat_screen()
+def main():
+    if st.session_state.page == "landing":
+        landing_page()
+    elif st.session_state.page == "login":
+        login_screen()
+    elif st.session_state.page == "chat":
+        if st.session_state.logged_in:
+            chat_screen()
+        else:
+            st.session_state.page = "login"
+            st.rerun()
 
-
-
+if __name__ == "__main__":
+    main()
